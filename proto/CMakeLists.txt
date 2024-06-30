@@ -32,11 +32,3 @@ function(generate_proto TARGET_NAME PROTODIR OUTPUTDIR)
         set_target_properties(${TARGET_NAME} PROPERTIES LINKER_LANGUAGE CXX)
     endif()
 endfunction()
-
-generate_proto(proto
-    "${PROTO_ROOT}"
-    "${PROTO_ROOT}/output"
-
-# -- Proto sources --
-    # ${PROTO_ROOT}/config.proto
-)
