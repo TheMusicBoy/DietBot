@@ -14,9 +14,16 @@ if (${DEBUG})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 endif()
 
-# Building
+# Building 
 add_subdirectory(thirdparty)
 add_subdirectory(src)
+
+option(TEST "" OFF)
+
+if (${TEST})
+    message(STATUS "Building tests...")
+    add_subdirectory(tests)
+endif()
 
 add_custom_target(build_finished ALL
     COMMENT "Build almost finished...")
