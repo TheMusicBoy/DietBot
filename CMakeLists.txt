@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.24)
 project(DietBot)
 
 # Export compile commands
@@ -14,8 +14,13 @@ if (${DEBUG})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 endif()
 
-# Building 
+find_package(absl REQUIRED)
+find_package(Protobuf 5.27 REQUIRED)
+set(PROTOC_EXEC "/Users/danilarutin/Downloads/protoc-27/bin/protoc")
+
+# Building
 add_subdirectory(thirdparty)
+add_subdirectory(proto)
 add_subdirectory(src)
 
 option(TEST "" OFF)

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package NDietBot.NProtoTest;
+
+message TTestMessage {
+    string test_field = 1;
+}
