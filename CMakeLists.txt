@@ -31,4 +31,7 @@ add_custom_target(build_finished ALL
 add_custom_command(TARGET build_finished POST_BUILD
     COMMAND cp ${PROJECT_BINARY_DIR}/compile_commands.json ${PROJECT_SOURCE_DIR}/
 )
-message("Compile commands exported...")
+add_custom_command(TARGET build_finished POST_BUILD
+    COMMAND echo "ctest --test-dir ${PROJECT_BINARY_DIR}/tests" > ${PROJECT_BINARY_DIR}/run_test
+)
+message(STATUS "Build finished")
