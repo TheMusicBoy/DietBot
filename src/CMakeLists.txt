@@ -3,7 +3,7 @@ include_directories(${Protobuf_INCLUDE_DIR})
 set(SRCROOT "${PROJECT_SOURCE_DIR}/src")
 
 set(SRC
-    ${SRCROOT}/main.cpp
+    # ${SRCROOT}/main.cpp
 )
 
 if (NOT "${SRC}" STREQUAL "")
