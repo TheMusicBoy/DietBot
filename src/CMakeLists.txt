@@ -1,5 +1,8 @@
 include_directories(${Protobuf_INCLUDE_DIR})
 
+add_subdirectory(db)
+add_subdirectory(common)
+
 set(SRCROOT "${PROJECT_SOURCE_DIR}/src")
 
 set(SRC
@@ -9,7 +12,7 @@ set(SRC
 if (NOT "${SRC}" STREQUAL "")
     message(STATUS "Building main executable...")
     add_executable(main ${SRC})
-    target_link_libraries(main PUBLIC proto ${Protobuf_LIBRARIES})
+    target_link_libraries(main PUBLIC common db ${Protobuf_LIBRARIES})
     target_include_directories(main PUBLIC ${PROJECT_SOURCE_DIR}/src)
     target_include_directories(main PUBLIC ${PROJECT_SOURCE_DIR}/proto)
     target_include_directories(main PUBLIC ${Protobuf_INCLUDE_DIRS})
