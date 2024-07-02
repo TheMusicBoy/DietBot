@@ -3,6 +3,7 @@
 #include <generated/config.pb.h>
 #include <generated/product.pb.h>
 #include <generated/consumer.pb.h>
+#include <generated/chat.pb.h>
 #include <common/thread_pool.h>
 #include <pqxx/pqxx>
 
@@ -25,6 +26,11 @@ public:
     std::future<int> UpdateProduct(const NProto::TProduct& user, TTransactionPtr tx);
     std::future<int> CreateProduct(const NProto::TProduct& user, TTransactionPtr tx);
     std::future<int> DeleteProduct(const std::string& name, TTransactionPtr tx);
+
+    std::future<NProto::TChatInfo> GetChatInfo(int64_t id, TTransactionPtr tx);
+    std::future<int> UpdateChatInfo(const NProto::TChatInfo& chatInfo, TTransactionPtr tx);
+    std::future<int> CreateChatInfo(const NProto::TChatInfo& chatInfo, TTransactionPtr tx);
+    std::future<int> DeleteChatInfo(int64_t id, TTransactionPtr tx);
 
 private:
     TConnectionPtr Connection_;

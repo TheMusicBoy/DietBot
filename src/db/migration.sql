@@ -2,7 +2,7 @@
 
 CREATE USER diet_bot WITH PASSWORD '123456';
 
-CREATE TABLE consumer (
+CREATE TABLE IF NOT EXISTS consumer (
     id bigint PRIMARY KEY,
     purpose integer,
     birthday bigint,
@@ -13,7 +13,7 @@ CREATE TABLE consumer (
 
 GRANT ALL PRIVILEGES ON consumer TO diet_bot;
 
-CREATE TABLE product (
+CREATE TABLE IF NOT EXISTS product (
     name varchar(40) PRIMARY KEY,
 	kalories real,
 	protein real,
@@ -22,3 +22,10 @@ CREATE TABLE product (
 );
 
 GRANT ALL PRIVILEGES ON product TO diet_bot;
+
+CREATE TABLE IF NOT EXISTS chat_info (
+    id bigint PRIMARY KEY,
+	status int
+);
+
+GRANT ALL PRIVILEGES ON chat_info TO diet_bot;

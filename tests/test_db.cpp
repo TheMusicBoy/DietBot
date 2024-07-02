@@ -110,7 +110,7 @@ TEST_F(DbClientTest, TestProduct) {
     }
     {
         auto tx = client->StartTransaction();
-        productB = client->GetProduct("test_product", tx).get();
+        productB = client->GetProduct(productA.name(), tx).get();
         tx->commit();
         expectEq();
     }
@@ -127,14 +127,56 @@ TEST_F(DbClientTest, TestProduct) {
     }
     {
         auto tx = client->StartTransaction();
-        productB = client->GetProduct("test_product", tx).get();
+        productB = client->GetProduct(productA.name(), tx).get();
         tx->commit();
         expectEq();
     }
 
     {
         auto tx = client->StartTransaction();
-        EXPECT_TRUE(!client->DeleteProduct("test_product", tx).get());
+        EXPECT_TRUE(!client->DeleteProduct(productA.name(), tx).get());
         tx->commit();
     }
 }
+
+TEST_F(DbClientTest, TestChatInfo) {
+    NDietBot::NProto::TChatInfo chatInfoA, chatInfoB;
+    auto expectEq = [&]() {
+        EXPECT_EQ(chatInfoA.id(), chatInfoB.id());
+        EXPECT_EQ(chatInfoA.status(), chatInfoB.status());
+    };
+
+    chatInfoA.set_id(444);
+    chatInfoA.set_status(NDietBot::NProto::EChatStatus::Start);
+
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->CreateChatInfo(chatInfoA, tx).get());
+        tx->commit();
+    }
+    {
+        auto tx = client->StartTransaction();
+        chatInfoB = client->GetChatInfo(chatInfoA.id(), tx).get();
+        tx->commit();
+        expectEq();
+    }
+
+    chatInfoA.set_status(NDietBot::NProto::EChatStatus::PurposeAsk);
+
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->UpdateChatInfo(chatInfoA, tx).get());
+        tx->commit();
+    }
+    {
+        auto tx = client->StartTransaction();
+        chatInfoB = client->GetChatInfo(chatInfoA.id(), tx).get();
+        tx->commit();
+        expectEq();
+    }
+
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->DeleteChatInfo(chatInfoA.id(), tx).get());
+        tx->commit();
+    } }

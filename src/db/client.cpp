@@ -101,7 +101,7 @@ INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
             );
             tx->exec(query);
         } catch (std::exception& e) {
-            ELOG_ERROR(e, "Failed to update product.");
+            ELOG_ERROR(e, "Failed to create product.");
             return 1;
         }
         return 0;
@@ -199,7 +199,7 @@ INSERT INTO product (name, kalories, protein, fats, carbohydrates)
             );
             tx->exec(query);
         } catch (std::exception& e) {
-            ELOG_ERROR(e, "Failed to update product.");
+            ELOG_ERROR(e, "Failed to create product.");
             return 1;
         }
         return 0;
@@ -229,6 +229,90 @@ UPDATE product
             tx->exec(query);
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to update product.");
+            return 1;
+        }
+        return 0;
+    });
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::future<NProto::TChatInfo> TClient::GetChatInfo(int64_t id, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, id, tx](){
+        NProto::TChatInfo proto;
+        try {
+            auto query = fmt::format(
+                "SELECT * FROM chat_info WHERE id={}",
+                id
+            );
+            auto result = tx->query<int64_t, int32_t>(query);
+            THROW_IF(result.begin() == result.end(), "Chat info not found (ChatId: {})", id);
+
+            auto [_, status] = *(result.begin());
+            proto.set_id(id);
+            proto.set_status(NProto::EChatStatus(status));
+            return proto;
+        } catch (std::exception& e) {
+            ELOG_ERROR(e, "Failed to get chat info.");
+            proto.set_id(0);
+            return proto;
+        }
+    });
+}
+
+std::future<int> TClient::DeleteChatInfo(int64_t id, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, id, tx](){
+        try {
+            auto query = fmt::format(
+                "DELETE FROM chat_info WHERE id={}",
+                id
+            );
+            tx->exec(query);
+            return 0;
+        } catch (std::exception& e) {
+            ELOG_ERROR(e, "Failed to delete chat_info.");
+        }
+        return 1;
+    });
+}
+
+std::future<int> TClient::CreateChatInfo(const NProto::TChatInfo& chatInfo, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, chatInfo, tx](){
+        try {
+            auto query = fmt::format(
+                R"(
+INSERT INTO chat_info (id, status)
+    VALUES ({0}, {1})
+                )",
+                chatInfo.id(),
+                static_cast<int32_t>(chatInfo.status())
+            );
+            tx->exec(query);
+        } catch (std::exception& e) {
+            ELOG_ERROR(e, "Failed to create chat_info.");
+            return 1;
+        }
+        return 0;
+    });
+}
+
+std::future<int> TClient::UpdateChatInfo(const NProto::TChatInfo& chatInfo, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, chatInfo, tx](){
+        try {
+            auto query = fmt::format(
+                R"(
+UPDATE chat_info
+    SET
+        status = {1}
+    WHERE
+        id = {0}
+                )",
+                chatInfo.id(),
+                static_cast<int32_t>(chatInfo.status())
+            );
+            tx->exec(query);
+        } catch (std::exception& e) {
+            ELOG_ERROR(e, "Failed to update chat_info.");
             return 1;
         }
         return 0;

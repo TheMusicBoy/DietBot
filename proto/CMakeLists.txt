@@ -50,4 +50,5 @@ generate_proto(
 # -- Proto sources --
     ${PROTO_ROOT}/consumer.proto
     ${PROTO_ROOT}/product.proto
+    ${PROTO_ROOT}/chat.proto
 )
