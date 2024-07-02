@@ -1,4 +1,6 @@
-// Пока ручками
+-- Ручками
+
+CREATE USER diet_bot WITH PASSWORD '123456';
 
 CREATE TABLE consumer (
     id bigint PRIMARY KEY,
@@ -9,6 +11,8 @@ CREATE TABLE consumer (
     activity integer
 );
 
+GRANT ALL PRIVILEGES ON consumer TO diet_bot;
+
 CREATE TABLE product (
     name varchar(40) PRIMARY KEY,
 	kalories real,
@@ -16,3 +20,5 @@ CREATE TABLE product (
 	fats real,
 	carbohydrates real
 );
+
+GRANT ALL PRIVILEGES ON product TO diet_bot;

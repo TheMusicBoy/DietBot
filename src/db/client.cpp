@@ -35,20 +35,24 @@ TClient::TClient(const NProto::TDataBaseConfig& config)
     }
 }
 
+TTransactionPtr TClient::StartTransaction() {
+    return std::make_shared<pqxx::work>(*Connection_);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
-std::future<NProto::TConsumer> TClient::GetConsumer(int64_t id) {
-    return ThreadPool_.submit_task([this, id](){
+std::future<NProto::TConsumer> TClient::GetConsumer(int64_t id, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, id, tx](){
         NProto::TConsumer proto;
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
-                R"(
-SELECT * FROM consumer WHERE id={}
-                )",
-                id);
-            auto [_, purpose, birthday, height, weight, activity] = *tx.query<int64_t, int32_t, int64_t, int32_t, int32_t, int32_t>(query).begin();
+                "SELECT * FROM consumer WHERE id={}",
+                id
+            );
+            auto result = tx->query<int64_t, int32_t, int64_t, int32_t, int32_t, int32_t>(query);
+            THROW_IF(result.begin() == result.end(), "Consumer not found (ConsumerId: {})", id);
+
+            auto [_, purpose, birthday, height, weight, activity] = *(result.begin());
             proto.set_id(id);
             proto.set_purpose(purpose);
             proto.mutable_birthday()->set_seconds(birthday);
@@ -58,24 +62,20 @@ SELECT * FROM consumer WHERE id={}
             return proto;
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to get consumer.");
+            proto.set_id(0);
             return proto;
         }
     });
 }
 
-std::future<int> TClient::DeleteConsumer(int64_t id) {
-    return ThreadPool_.submit_task([this, id](){
-        NProto::TConsumer proto;
+std::future<int> TClient::DeleteConsumer(int64_t id, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, id, tx](){
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
-                R"(
-DELETE FROM consumer WHERE id={}
-                )",
-                id);
-            tx.exec(query);
-            tx.commit();
+                "DELETE FROM consumer WHERE id={}",
+                id
+            );
+            tx->exec(query);
             return 0;
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to delete consumer.");
@@ -84,11 +84,9 @@ DELETE FROM consumer WHERE id={}
     });
 }
 
-std::future<int> TClient::CreateConsumer(const NProto::TConsumer& consumer) {
-    return ThreadPool_.submit_task([this, &consumer](){
+std::future<int> TClient::CreateConsumer(const NProto::TConsumer& consumer, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, consumer, tx](){
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
                 R"(
 INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
@@ -99,9 +97,9 @@ INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
                 consumer.birthday().seconds(),
                 consumer.height(),
                 consumer.weight(),
-                consumer.activity());
-            tx.exec(query);
-            tx.commit();
+                consumer.activity()
+            );
+            tx->exec(query);
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to update product.");
             return 1;
@@ -110,11 +108,9 @@ INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
     });
 }
 
-std::future<int> TClient::UpdateConsumer(const NProto::TConsumer& consumer) {
-    return ThreadPool_.submit_task([this, &consumer](){
+std::future<int> TClient::UpdateConsumer(const NProto::TConsumer& consumer, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, consumer, tx](){
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
                 R"(
 UPDATE consumer
@@ -132,9 +128,9 @@ UPDATE consumer
                 consumer.birthday().seconds(),
                 consumer.height(),
                 consumer.weight(),
-                consumer.activity());
-            tx.exec(query);
-            tx.commit();
+                consumer.activity()
+            );
+            tx->exec(query);
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to update product.");
             return 1;
@@ -145,18 +141,18 @@ UPDATE consumer
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::future<NProto::TProduct> TClient::GetProduct(const std::string& name) {
-    return ThreadPool_.submit_task([this, &name](){
+std::future<NProto::TProduct> TClient::GetProduct(const std::string& name, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, name, tx](){
+        NProto::TProduct proto;
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
-                R"(
-SELECT * FROM product WHERE name='{}'
-                )",
-                name);
-            auto [_, kalories, protein, fats, carbohydrates] = *tx.query<std::string, float, float, float, float>(query).begin();
-            NProto::TProduct proto;
+                "SELECT * FROM product WHERE name='{}'",
+                name
+            );
+            auto result = tx->query<std::string, float, float, float, float>(query);
+            THROW_IF(result.begin() == result.end(), "Product not found (ProductName: {})", name);
+
+            auto [_, kalories, protein, fats, carbohydrates] = *(result.begin());
             proto.set_name(name);
             proto.set_kalories(kalories);
             proto.set_protein(protein);
@@ -164,24 +160,21 @@ SELECT * FROM product WHERE name='{}'
             proto.set_carbohydrates(carbohydrates);
             return proto;
         } catch (std::exception& e) {
-            THROW_ERROR(e, "Failed to get product.");
+            ELOG_ERROR(e, "Failed to get product.");
+            proto.set_name("");
+            return proto;
         }
     });
 }
 
-std::future<int> TClient::DeleteProduct(const std::string& name) {
-    return ThreadPool_.submit_task([this, &name](){
-        NProto::TConsumer proto;
+std::future<int> TClient::DeleteProduct(const std::string& name, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, name, tx](){
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
-                R"(
-DELETE FROM product WHERE name='{}'
-                )",
-                name);
-            tx.exec(query);
-            tx.commit();
+                "DELETE FROM product WHERE name='{}'",
+                name
+            );
+            tx->exec(query);
             return 0;
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to delete product.");
@@ -190,11 +183,9 @@ DELETE FROM product WHERE name='{}'
     });
 }
 
-std::future<int> TClient::CreateProduct(const NProto::TProduct& product) {
-    return ThreadPool_.submit_task([this, &product](){
+std::future<int> TClient::CreateProduct(const NProto::TProduct& product, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, product, tx](){
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
                 R"(
 INSERT INTO product (name, kalories, protein, fats, carbohydrates)
@@ -204,9 +195,9 @@ INSERT INTO product (name, kalories, protein, fats, carbohydrates)
                 product.kalories(),
                 product.protein(),
                 product.fats(),
-                product.carbohydrates());
-            tx.exec(query);
-            tx.commit();
+                product.carbohydrates()
+            );
+            tx->exec(query);
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to update product.");
             return 1;
@@ -215,11 +206,9 @@ INSERT INTO product (name, kalories, protein, fats, carbohydrates)
     });
 }
 
-std::future<int> TClient::UpdateProduct(const NProto::TProduct& product) {
-    return ThreadPool_.submit_task([this, &product](){
+std::future<int> TClient::UpdateProduct(const NProto::TProduct& product, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, product, tx](){
         try {
-            pqxx::work tx(*Connection_);
-
             auto query = fmt::format(
                 R"(
 UPDATE product
@@ -235,9 +224,9 @@ UPDATE product
                 product.kalories(),
                 product.protein(),
                 product.fats(),
-                product.carbohydrates());
-            tx.exec(query);
-            tx.commit();
+                product.carbohydrates()
+            );
+            tx->exec(query);
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to update product.");
             return 1;

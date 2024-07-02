@@ -50,9 +50,17 @@ TEST_F(DbClientTest, TestConsumer) {
     consumerA.set_weight(4);
     consumerA.set_activity(5);
 
-    EXPECT_TRUE(!client->CreateConsumer(consumerA).get());
-    consumerB = client->GetConsumer(444).get();
-    expectEq();
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->CreateConsumer(consumerA, tx).get());
+        tx->commit();
+    }
+    {
+        auto tx = client->StartTransaction();
+        consumerB = client->GetConsumer(consumerA.id(), tx).get();
+        tx->commit();
+        expectEq();
+    }
 
     consumerA.set_purpose(2);
     consumerA.mutable_birthday()->set_seconds(3);
@@ -60,11 +68,23 @@ TEST_F(DbClientTest, TestConsumer) {
     consumerA.set_weight(5);
     consumerA.set_activity(6);
 
-    EXPECT_TRUE(!client->UpdateConsumer(consumerA).get());
-    consumerB = client->GetConsumer(444).get();
-    expectEq();
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->UpdateConsumer(consumerA, tx).get());
+        tx->commit();
+    }
+    {
+        auto tx = client->StartTransaction();
+        consumerB = client->GetConsumer(consumerA.id(), tx).get();
+        tx->commit();
+        expectEq();
+    }
 
-    EXPECT_TRUE(!client->DeleteConsumer(444).get());
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->DeleteConsumer(consumerA.id(), tx).get());
+        tx->commit();
+    }
 }
 
 TEST_F(DbClientTest, TestProduct) {
@@ -83,18 +103,38 @@ TEST_F(DbClientTest, TestProduct) {
     productA.set_fats(3);
     productA.set_carbohydrates(4);
 
-    EXPECT_TRUE(!client->CreateProduct(productA).get());
-    productB = client->GetProduct("test_product").get();
-    expectEq();
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->CreateProduct(productA, tx).get());
+        tx->commit();
+    }
+    {
+        auto tx = client->StartTransaction();
+        productB = client->GetProduct("test_product", tx).get();
+        tx->commit();
+        expectEq();
+    }
 
     productA.set_kalories(2);
     productA.set_protein(3);
     productA.set_fats(4);
     productA.set_carbohydrates(5);
 
-    EXPECT_TRUE(!client->UpdateProduct(productA).get());
-    productB = client->GetProduct("test_product").get();
-    expectEq();
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->UpdateProduct(productA, tx).get());
+        tx->commit();
+    }
+    {
+        auto tx = client->StartTransaction();
+        productB = client->GetProduct("test_product", tx).get();
+        tx->commit();
+        expectEq();
+    }
 
-    EXPECT_TRUE(!client->DeleteProduct("test_product").get());
+    {
+        auto tx = client->StartTransaction();
+        EXPECT_TRUE(!client->DeleteProduct("test_product", tx).get());
+        tx->commit();
+    }
 }
