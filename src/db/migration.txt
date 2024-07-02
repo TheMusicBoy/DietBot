@@ -1,0 +1,16 @@
+CREATE TABLE consumer (
+    login varchar(40) PRIMARY KEY,
+    purpose integer,
+    birthday bigint,
+    height integer,
+    weight integer,
+    activity integer
+);
+
+CREATE TABLE product (
+    name varchar(40) PRIMARY KEY,
+	kalories real,
+	protein real,
+	fats real,
+	carbohydrates real
+);

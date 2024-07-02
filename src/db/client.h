@@ -17,10 +17,12 @@ public:
     std::future<NProto::TConsumer> GetConsumer(const std::string& login);
     std::future<int> UpdateConsumer(const NProto::TConsumer& consumer);
     std::future<int> CreateConsumer(const NProto::TConsumer& consumer);
+    std::future<int> DeleteConsumer(const std::string& login);
 
     std::future<NProto::TProduct> GetProduct(const std::string& name);
     std::future<int> UpdateProduct(const NProto::TProduct& user);
     std::future<int> CreateProduct(const NProto::TProduct& user);
+    std::future<int> DeleteProduct(const std::string& name);
 
 private:
     TConnectionPtr Connection_;
