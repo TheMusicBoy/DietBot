@@ -25,3 +25,8 @@ add_subdirectory(proto_test)
 test_libs(proto_test)
 test_dirs(${SRCROOT}/proto_test)
 add_test(test_proto)
+
+
+test_libs(db)
+test_dirs()
+add_test(test_db)
