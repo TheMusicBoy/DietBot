@@ -7,6 +7,8 @@ set(SRC
     ${SRCROOT}/exception.cpp
     ${SRCROOT}/logger.h
     ${SRCROOT}/logger.cpp
+    ${SRCROOT}/thread_pool.h
+    ${SRCROOT}/thread_pool.cpp
 )
 
 if (NOT "${SRC}" STREQUAL "")
