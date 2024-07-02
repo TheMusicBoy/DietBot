@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package NDietBot.NProto;
+
+message TProduct {
+    string name = 1;
+
+    float kalories = 2;
+    float protein = 3;
+    float fats = 4;
+    float carbohydrates = 5;
+};

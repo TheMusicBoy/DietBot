@@ -13,7 +13,7 @@ function(generate_proto TARGET_NAME PROTODIR OUTPUTDIR)
     if (NOT "${ARGN}" STREQUAL "")
         message(STATUS "Generating protobufs v${Protobuf_VERSION}...")
         add_custom_command(
-            COMMAND rm -r ${OUTPUTDIR} && mkdir -p ${OUTPUTDIR} && ${PROTOC_EXEC} --proto_path=${PROTODIR} --cpp_out=${OUTPUTDIR} ${ARGN}
+            COMMAND mkdir -p ${OUTPUTDIR} && ${PROTOC_EXEC} --proto_path=${PROTODIR} --cpp_out=${OUTPUTDIR} ${ARGN}
             OUTPUT ${PROTO_OUTPUT}
         )
         message(STATUS "Generated: ${PROTO_OUTPUT}")
@@ -40,4 +40,14 @@ generate_proto(
 
 # -- Proto sources --
     ${PROTO_ROOT}/config.proto
+)
+
+generate_proto(
+    proto_schema
+    ${PROTO_ROOT}
+    ${PROTO_ROOT}/generated
+
+# -- Proto sources --
+    ${PROTO_ROOT}/consumer.proto
+    ${PROTO_ROOT}/product.proto
 )
