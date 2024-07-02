@@ -14,10 +14,10 @@ class TClient {
 public:
     TClient(const NProto::TDataBaseConfig& config);
 
-    std::future<NProto::TConsumer> GetConsumer(const std::string& login);
+    std::future<NProto::TConsumer> GetConsumer(int64_t id);
     std::future<int> UpdateConsumer(const NProto::TConsumer& consumer);
     std::future<int> CreateConsumer(const NProto::TConsumer& consumer);
-    std::future<int> DeleteConsumer(const std::string& login);
+    std::future<int> DeleteConsumer(int64_t id);
 
     std::future<NProto::TProduct> GetProduct(const std::string& name);
     std::future<int> UpdateProduct(const NProto::TProduct& user);
@@ -29,5 +29,7 @@ private:
     BS::thread_pool ThreadPool_;
 
 };
+
+using TClientPtr = std::shared_ptr<TClient>;
 
 }

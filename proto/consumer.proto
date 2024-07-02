@@ -5,7 +5,7 @@ import "google/protobuf/timestamp.proto";
 package NDietBot.NProto;
 
 message TConsumer {
-    string login = 1;
+    int64 id = 1;
 
     int32 purpose = 2;
 

@@ -15,7 +15,7 @@ auto Logger = std::make_shared<TLogger>("Client");
 }
 
 TClient::TClient(const NProto::TDataBaseConfig& config)
-    : ThreadPool_(16)
+    : ThreadPool_(config.num_threads() ? config.num_threads() : 16)
 {
     try {
         Connection_ = std::make_shared<pqxx::connection>(
@@ -37,19 +37,19 @@ TClient::TClient(const NProto::TDataBaseConfig& config)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-std::future<NProto::TConsumer> TClient::GetConsumer(const std::string& login) {
-    return ThreadPool_.submit_task([this, &login](){
+std::future<NProto::TConsumer> TClient::GetConsumer(int64_t id) {
+    return ThreadPool_.submit_task([this, id](){
         NProto::TConsumer proto;
         try {
             pqxx::work tx(*Connection_);
 
             auto query = fmt::format(
                 R"(
-SELECT * FROM consumer WHERE login='{}'
+SELECT * FROM consumer WHERE id={}
                 )",
-                login);
-            auto [_, purpose, birthday, height, weight, activity] = *tx.query<std::string, int32_t, int64_t, int32_t, int32_t, int32_t>(query).begin();
-            proto.set_login(login);
+                id);
+            auto [_, purpose, birthday, height, weight, activity] = *tx.query<int64_t, int32_t, int64_t, int32_t, int32_t, int32_t>(query).begin();
+            proto.set_id(id);
             proto.set_purpose(purpose);
             proto.mutable_birthday()->set_seconds(birthday);
             proto.set_height(height);
@@ -63,17 +63,17 @@ SELECT * FROM consumer WHERE login='{}'
     });
 }
 
-std::future<int> TClient::DeleteConsumer(const std::string& login) {
-    return ThreadPool_.submit_task([this, &login](){
+std::future<int> TClient::DeleteConsumer(int64_t id) {
+    return ThreadPool_.submit_task([this, id](){
         NProto::TConsumer proto;
         try {
             pqxx::work tx(*Connection_);
 
             auto query = fmt::format(
                 R"(
-DELETE FROM consumer WHERE login='{}'
+DELETE FROM consumer WHERE id={}
                 )",
-                login);
+                id);
             tx.exec(query);
             tx.commit();
             return 0;
@@ -91,10 +91,10 @@ std::future<int> TClient::CreateConsumer(const NProto::TConsumer& consumer) {
 
             auto query = fmt::format(
                 R"(
-INSERT INTO consumer (login, purpose, birthday, height, weight, activity)
-    VALUES ('{0}', {1}, {2}, {3}, {4}, {5})
+INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
+    VALUES ({0}, {1}, {2}, {3}, {4}, {5})
                 )",
-                consumer.login(),
+                consumer.id(),
                 consumer.purpose(),
                 consumer.birthday().seconds(),
                 consumer.height(),
@@ -125,9 +125,9 @@ UPDATE consumer
         weight = {4},
         activity = {5}
     WHERE
-        login = '{0}'
+        id = {0}
                 )",
-                consumer.login(),
+                consumer.id(),
                 consumer.purpose(),
                 consumer.birthday().seconds(),
                 consumer.height(),

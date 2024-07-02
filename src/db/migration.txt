@@ -1,5 +1,7 @@
+// Пока ручками
+
 CREATE TABLE consumer (
-    login varchar(40) PRIMARY KEY,
+    id bigint PRIMARY KEY,
     purpose integer,
     birthday bigint,
     height integer,

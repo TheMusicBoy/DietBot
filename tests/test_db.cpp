@@ -35,7 +35,7 @@ class DbClientTest : public QuickTest {
 TEST_F(DbClientTest, TestConsumer) {
     NDietBot::NProto::TConsumer consumerA, consumerB;
     auto expectEq = [&]() {
-        EXPECT_EQ(consumerA.login(), consumerB.login());
+        EXPECT_EQ(consumerA.id(), consumerB.id());
         EXPECT_EQ(consumerA.purpose(), consumerB.purpose());
         EXPECT_EQ(consumerA.birthday().seconds(), consumerB.birthday().seconds());
         EXPECT_EQ(consumerA.height(), consumerB.height());
@@ -43,7 +43,7 @@ TEST_F(DbClientTest, TestConsumer) {
         EXPECT_EQ(consumerA.activity(), consumerB.activity());
     };
 
-    consumerA.set_login("test_consumer");
+    consumerA.set_id(444);
     consumerA.set_purpose(1);
     consumerA.mutable_birthday()->set_seconds(2);
     consumerA.set_height(3);
@@ -51,7 +51,7 @@ TEST_F(DbClientTest, TestConsumer) {
     consumerA.set_activity(5);
 
     EXPECT_TRUE(!client->CreateConsumer(consumerA).get());
-    consumerB = client->GetConsumer("test_consumer").get();
+    consumerB = client->GetConsumer(444).get();
     expectEq();
 
     consumerA.set_purpose(2);
@@ -61,10 +61,10 @@ TEST_F(DbClientTest, TestConsumer) {
     consumerA.set_activity(6);
 
     EXPECT_TRUE(!client->UpdateConsumer(consumerA).get());
-    consumerB = client->GetConsumer("test_consumer").get();
+    consumerB = client->GetConsumer(444).get();
     expectEq();
 
-    EXPECT_TRUE(!client->DeleteConsumer("test_consumer").get());
+    EXPECT_TRUE(!client->DeleteConsumer(444).get());
 }
 
 TEST_F(DbClientTest, TestProduct) {
