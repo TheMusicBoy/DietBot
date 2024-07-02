@@ -8,7 +8,7 @@ set(SRC
     ${SRCROOT}/logger.h
     ${SRCROOT}/logger.cpp
     ${SRCROOT}/thread_pool.h
-    ${SRCROOT}/thread_pool.cpp
+    ${SRCROOT}/thread_pool_util.h
 )
 
 if (NOT "${SRC}" STREQUAL "")
