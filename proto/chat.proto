@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package NDietBot.NProto;
+
+enum EChatStatus {
+    Start = 0;
+
+    BirthdayAsk = 1;
+    WeightAsk = 2;
+    HeightAsk = 3;
+    ActivityAsk = 4;
+    PurposeAsk = 5;
+
+    ProductNameAsk = 6;
+    KaloriesAsk = 7;
+    ProteinAsk = 8;
+    FatsAsk = 9;
+    CarbohydratesAsk = 10;
+
+    FindFoodAsk = 11;
+};
+
+message TChatInfo {
+    int64 id = 1;
+    EChatStatus status = 2;
+    string last_string_id = 3;
+};

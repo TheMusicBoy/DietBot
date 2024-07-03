@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package NDietBot.NProto;
+
+message TDataBaseConfig {
+    string dbname = 1;
+    string hostaddr = 2;
+    string port = 3;
+    string user = 4;
+    string password = 5;
+    int32 num_threads = 6;
+};
+
+message TConfig {
+    string instance_name = 1;
+
+    string bot_name = 2;
+    string token = 3;
+
+    TDataBaseConfig db_config = 4;
+};
