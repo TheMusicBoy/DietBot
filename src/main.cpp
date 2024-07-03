@@ -1,15 +1,31 @@
-#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <string>
-#include <output/config.pb.h>
+#include <service/service.h>
+#include <common/exception.h>
+#include <common/logger.h>
 #include <google/protobuf/util/json_util.h>
 
+std::string readFile(const std::string& fileName) {
+    std::ifstream f(fileName);
+    std::stringstream ss;
+    ss << f.rdbuf();
+    return ss.str();
+}
+
 int main() {
+    auto Logger = std::make_shared<NDietBot::TLogger>("Main");
+
+    std::string configStr = readFile("config.txt");
+
+    LOG_INFO("Got config: {}", configStr);
+
     NDietBot::NProto::TConfig config;
-    config.set_service_name("Some Service");
+    THROW_UNLESS(google::protobuf::json::JsonStringToMessage(configStr, &config).ok(), "Config has invalid format.");
+    
+    NDietBot::TService service(config);
 
-    std::string output;
-    if (!google::protobuf::json::MessageToJsonString(config, &output).ok())
-        std::cout << "Something bad!" << std::endl;
+    auto process = service.Start();
 
-    std::cout << output << std::endl;
+    THROW_IF(process.get(), "Process returned 1.");
 }

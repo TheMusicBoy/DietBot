@@ -41,3 +41,23 @@ if (NOT fmt_POPULATED)
     FetchContent_Populate(fmt)
     add_subdirectory(${fmt_SOURCE_DIR} ${fmt_BINARY_DIR})
 endif()
+
+# -- Telegram API --
+
+find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(Boost COMPONENTS system REQUIRED)
+find_package(CURL)
+
+FetchContent_Declare(tgapi
+  GIT_REPOSITORY https://github.com/reo7sp/tgbot-cpp.git
+  GIT_TAG master
+)
+
+FetchContent_MakeAvailable(tgapi)
+FetchContent_GetProperties(tgapi)
+
+if (NOT tgapi_POPULATED)
+    FetchContent_Populate(tgapi)
+    add_subdirectory(${tgapi_SOURCE_DIR} ${tgapi_BINARY_DIR})
+endif()

@@ -25,7 +25,8 @@ GRANT ALL PRIVILEGES ON product TO diet_bot;
 
 CREATE TABLE IF NOT EXISTS chat_info (
     id bigint PRIMARY KEY,
-	status int
+	status int,
+    last_string_id varchar(40)
 );
 
 GRANT ALL PRIVILEGES ON chat_info TO diet_bot;

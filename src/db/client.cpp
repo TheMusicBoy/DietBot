@@ -84,20 +84,30 @@ std::future<int> TClient::DeleteConsumer(int64_t id, TTransactionPtr tx) {
     });
 }
 
-std::future<int> TClient::CreateConsumer(const NProto::TConsumer& consumer, TTransactionPtr tx) {
-    return ThreadPool_.submit_task([this, consumer, tx](){
+std::future<int> TClient::CreateConsumer(const NProto::TConsumer& consumer, TTransactionPtr tx, int behavior) {
+    return ThreadPool_.submit_task([this, consumer, tx, behavior](){
         try {
+            std::string conflict = "";
+            if (behavior) {
+                conflict = behavior == 1 ? "ON CONFLICT DO NOTHING" : R"(
+ON CONFLICT (id) DO UPDATE
+    purpose = excluded.purpose
+    birthday = excluded.birthday
+    height = excluded.height
+    wieght = excluded.wieght
+    activity = excluded.activity
+                )";
+            }
             auto query = fmt::format(
-                R"(
-INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
-    VALUES ({0}, {1}, {2}, {3}, {4}, {5})
-                )",
+                R"(INSERT INTO consumer (id, purpose, birthday, height, weight, activity)
+VALUES ({0}, {1}, {2}, {3}, {4}, {5}) {6})",
                 consumer.id(),
                 consumer.purpose(),
                 consumer.birthday().seconds(),
                 consumer.height(),
                 consumer.weight(),
-                consumer.activity()
+                consumer.activity(),
+                conflict
             );
             tx->exec(query);
         } catch (std::exception& e) {
@@ -167,6 +177,34 @@ std::future<NProto::TProduct> TClient::GetProduct(const std::string& name, TTran
     });
 }
 
+std::future<std::vector<NProto::TProduct>> TClient::GetProductsLike(const std::string& name, TTransactionPtr tx) {
+    return ThreadPool_.submit_task([this, name, tx](){
+        std::vector<NProto::TProduct> protos;
+        try {
+            auto query = fmt::format(
+                "SELECT * FROM product WHERE name LIKE '%{}%'",
+                name
+            );
+            auto result = tx->query<std::string, float, float, float, float>(query);
+            THROW_IF(result.begin() == result.end(), "Products not found (ProductName: {})", name);
+
+            for (auto [name, kalories, protein, fats, carbohydrates] : result) {
+                NProto::TProduct p;
+                LOG_INFO("Found product {}", name);
+                p.set_name(name);
+                p.set_kalories(kalories);
+                p.set_protein(protein);
+                p.set_fats(fats);
+                p.set_carbohydrates(carbohydrates);
+                protos.push_back(p);
+            }
+        } catch (std::exception& e) {
+            ELOG_ERROR(e, "Failed to get products.");
+            return protos;
+        }
+    });
+}
+
 std::future<int> TClient::DeleteProduct(const std::string& name, TTransactionPtr tx) {
     return ThreadPool_.submit_task([this, name, tx](){
         try {
@@ -183,19 +221,28 @@ std::future<int> TClient::DeleteProduct(const std::string& name, TTransactionPtr
     });
 }
 
-std::future<int> TClient::CreateProduct(const NProto::TProduct& product, TTransactionPtr tx) {
-    return ThreadPool_.submit_task([this, product, tx](){
+std::future<int> TClient::CreateProduct(const NProto::TProduct& product, TTransactionPtr tx, int behavior) {
+    return ThreadPool_.submit_task([this, product, tx, behavior](){
         try {
+            std::string conflict = "";
+            if (behavior) {
+                conflict = behavior == 1 ? "ON CONFLICT DO NOTHING" : R"(
+ON CONFLICT (name) DO UPDATE
+    kalories = excluded.kalories
+    protein = excluded.protein
+    fats = excluded.fats
+    carbohydrates = excluded.carbohydrates
+)";
+            }
             auto query = fmt::format(
-                R"(
-INSERT INTO product (name, kalories, protein, fats, carbohydrates)
-    VALUES ('{0}', {1}, {2}, {3}, {4})
-                )",
+                R"(INSERT INTO product (name, kalories, protein, fats, carbohydrates)
+    VALUES ('{0}', {1}, {2}, {3}, {4}) {5})",
                 product.name(),
                 product.kalories(),
                 product.protein(),
                 product.fats(),
-                product.carbohydrates()
+                product.carbohydrates(),
+                conflict
             );
             tx->exec(query);
         } catch (std::exception& e) {
@@ -245,12 +292,13 @@ std::future<NProto::TChatInfo> TClient::GetChatInfo(int64_t id, TTransactionPtr 
                 "SELECT * FROM chat_info WHERE id={}",
                 id
             );
-            auto result = tx->query<int64_t, int32_t>(query);
+            auto result = tx->query<int64_t, int32_t, std::string>(query);
             THROW_IF(result.begin() == result.end(), "Chat info not found (ChatId: {})", id);
 
-            auto [_, status] = *(result.begin());
+            auto [_, status, last_string_id] = *(result.begin());
             proto.set_id(id);
             proto.set_status(NProto::EChatStatus(status));
+            proto.set_last_string_id(last_string_id);
             return proto;
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to get chat info.");
@@ -276,16 +324,19 @@ std::future<int> TClient::DeleteChatInfo(int64_t id, TTransactionPtr tx) {
     });
 }
 
-std::future<int> TClient::CreateChatInfo(const NProto::TChatInfo& chatInfo, TTransactionPtr tx) {
-    return ThreadPool_.submit_task([this, chatInfo, tx](){
+std::future<int> TClient::CreateChatInfo(const NProto::TChatInfo& chatInfo, TTransactionPtr tx, int behavior) {
+    return ThreadPool_.submit_task([this, chatInfo, tx, behavior](){
         try {
+            std::string conflict = "";
+            if (behavior) {
+                conflict = behavior == 1 ? "ON CONFLICT DO NOTHING" : "ON CONFLICT (id) DO UPDATE SET status = excluded.status";
+            }
             auto query = fmt::format(
-                R"(
-INSERT INTO chat_info (id, status)
-    VALUES ({0}, {1})
-                )",
+                "INSERT INTO chat_info (id, status, last_string_id) VALUES ({0}, {1}, '{2}') {3}",
                 chatInfo.id(),
-                static_cast<int32_t>(chatInfo.status())
+                static_cast<int32_t>(chatInfo.status()),
+                chatInfo.last_string_id(),
+                conflict
             );
             tx->exec(query);
         } catch (std::exception& e) {
@@ -303,12 +354,14 @@ std::future<int> TClient::UpdateChatInfo(const NProto::TChatInfo& chatInfo, TTra
                 R"(
 UPDATE chat_info
     SET
-        status = {1}
+        status = {1},
+        last_string_id = '{2}'
     WHERE
         id = {0}
                 )",
                 chatInfo.id(),
-                static_cast<int32_t>(chatInfo.status())
+                static_cast<int32_t>(chatInfo.status()),
+                chatInfo.last_string_id()
             );
             tx->exec(query);
         } catch (std::exception& e) {

@@ -144,10 +144,12 @@ TEST_F(DbClientTest, TestChatInfo) {
     auto expectEq = [&]() {
         EXPECT_EQ(chatInfoA.id(), chatInfoB.id());
         EXPECT_EQ(chatInfoA.status(), chatInfoB.status());
+        EXPECT_EQ(chatInfoA.last_string_id(), chatInfoB.last_string_id());
     };
 
     chatInfoA.set_id(444);
     chatInfoA.set_status(NDietBot::NProto::EChatStatus::Start);
+    chatInfoA.set_last_string_id("one");
 
     {
         auto tx = client->StartTransaction();
@@ -162,6 +164,7 @@ TEST_F(DbClientTest, TestChatInfo) {
     }
 
     chatInfoA.set_status(NDietBot::NProto::EChatStatus::PurposeAsk);
+    chatInfoA.set_last_string_id("two");
 
     {
         auto tx = client->StartTransaction();
