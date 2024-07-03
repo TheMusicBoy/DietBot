@@ -198,6 +198,7 @@ std::future<std::vector<NProto::TProduct>> TClient::GetProductsLike(const std::s
                 p.set_carbohydrates(carbohydrates);
                 protos.push_back(p);
             }
+            return protos;
         } catch (std::exception& e) {
             ELOG_ERROR(e, "Failed to get products.");
             return protos;
