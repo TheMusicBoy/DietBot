@@ -202,7 +202,8 @@ void TService::ProcessFindFoodAsk(TgBot::Message::Ptr message, NProto::TChatInfo
     if (product.empty()) {
         result = "Не было найдено продуктов по запросу.";
     } else {
-        std::ostringstream ss("По запросу были найдены следующие продукты:");
+        std::ostringstream ss;
+        ss << "По запросу были найдены следующие продукты:" << std::flush;
         for (auto p : product) {
             ss << fmt::format("\n{} -- на 100 гр:\n   {} ккал, {} гр. жира, {} гр. белка, {} гр. углеводов.",
                 p.name(), p.kalories(), p.fats(), p.protein(), p.carbohydrates());
