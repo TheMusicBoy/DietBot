@@ -74,7 +74,7 @@ void TService::ProcessBirthdayAsk(TgBot::Message::Ptr message, NProto::TChatInfo
     THROW_IF(Client_->UpdateChatInfo(chat, tx).get(), "Произошла ошибка при записи данных.");
     LOG_INFO("Chat updated");
 
-    Bot_.getApi().sendMessage(message->chat->id, "Дата успешно указана!\n\nТеперь укажите вес в полных кг, только цифру.");
+    Bot_.getApi().sendMessage(message->chat->id, "Дата успешно указана!\n\nТеперь укажите вес в полных кг, только целое число.");
 }
 
 void TService::ProcessWeightAsk(TgBot::Message::Ptr message, NProto::TChatInfo chat, TTransactionPtr tx) {
@@ -86,7 +86,7 @@ void TService::ProcessWeightAsk(TgBot::Message::Ptr message, NProto::TChatInfo c
     chat.set_status(NProto::EChatStatus::HeightAsk);
     THROW_IF(Client_->UpdateChatInfo(chat, tx).get(), "Произошла ошибка при записи данных.");
 
-    Bot_.getApi().sendMessage(message->chat->id, "Вес успешно указан!\n\nТеперь укажите рост в сантиметрах, только цифру.");
+    Bot_.getApi().sendMessage(message->chat->id, "Вес успешно указан!\n\nТеперь укажите рост в сантиметрах, только целое число.");
 }
 
 void TService::ProcessHeightAsk(TgBot::Message::Ptr message, NProto::TChatInfo chat, TTransactionPtr tx) {
@@ -128,6 +128,8 @@ void TService::ProcessPurposeAsk(TgBot::Message::Ptr message, NProto::TChatInfo 
 Теперь вы можете воспользоваться ботом, используя следующие команды:
  - /start -- для перенастройки профиля;
  - /info -- для проверки информации о себе;
+ - /newfood -- для добавления продукта в базу данных;
+ - /findfood -- для поиска продукта по названию;
     )");
 }
 
@@ -202,7 +204,8 @@ void TService::ProcessFindFoodAsk(TgBot::Message::Ptr message, NProto::TChatInfo
     if (product.empty()) {
         result = "Не было найдено продуктов по запросу.";
     } else {
-        std::ostringstream ss("По запросу были найдены следующие продукты:");
+        std::ostringstream ss;
+        ss << "По запросу были найдены следующие продукты:" << std::flush;
         for (auto p : product) {
             ss << fmt::format("\n{} -- на 100 гр:\n   {} ккал, {} гр. жира, {} гр. белка, {} гр. углеводов.",
                 p.name(), p.kalories(), p.fats(), p.protein(), p.carbohydrates());
@@ -273,6 +276,11 @@ void TService::InitBot() {
                     consumer.activity(),
                     consumer.purpose()
                  ));
+
+                NProto::TChatInfo chat;
+                chat.set_id(message->chat->id);
+                chat.set_status(NProto::EChatStatus::BirthdayAsk);
+                THROW_IF(Client_->CreateChatInfo(chat, tx, 2).get(), "Stop update chat info.");
                 tx->commit();
                 return;
             }

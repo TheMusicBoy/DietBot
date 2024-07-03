@@ -182,7 +182,7 @@ std::future<std::vector<NProto::TProduct>> TClient::GetProductsLike(const std::s
         std::vector<NProto::TProduct> protos;
         try {
             auto query = fmt::format(
-                "SELECT * FROM product WHERE name LIKE '%{}%'",
+                "SELECT * FROM product WHERE LOWER(name) LIKE ('%' || LOWER('{}') || '%')",
                 name
             );
             auto result = tx->query<std::string, float, float, float, float>(query);
